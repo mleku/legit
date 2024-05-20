@@ -38,7 +38,7 @@ pre {
 }
 
 * {
-    box-sizing: border-box;
+    /*box-sizing: border-box;*/
 }
 
 body {
@@ -88,6 +88,12 @@ main h1 {
 
 main h2 {
     font-size: 1.5em;
+}
+
+h3 {
+    color: var(--gray);
+    font-style:italic;
+    margin: 0 0 0 2em;
 }
 
 main h2, h3 {
@@ -200,7 +206,7 @@ a:hover {
 }
 
 code {
-    background-color: var(--code);
+    /*background-color: var(--code);*/
 }
 
 .diff {
