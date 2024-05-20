@@ -8,7 +8,7 @@ Frenchman, and saying "Oui, il est le git!"
 But yeah it's pretty legit, no cap on god fr fr
 
 
-## FEATURES
+### FEATURES
 
 - Fully customizable templates and stylesheets.
 - Cloning over http(s).
@@ -20,7 +20,7 @@ But yeah it's pretty legit, no cap on god fr fr
 Clone it, 'go build' it.
 
 
-## CONFIG
+### CONFIG
 
 Uses yaml for configuration. Looks for a 'config.yaml' in the current
 directory by default; pass the '--config' flag to point it elsewhere.
@@ -61,7 +61,7 @@ These options are fairly self-explanatory, but of note are:
 - repo.ignore: repos to ignore, relative to scanPath.
 - server.name: used for go-import meta tags and clone URLs.
 
-## NOTES
+### NOTES
 
 - Run legit behind a TLS terminating proxy like relayd(8) or nginx
 - Cloning only works in bare repos -- this is a limitation inherent to git. You
@@ -73,6 +73,6 @@ These options are fairly self-explanatory, but of note are:
 - Paths are unveil(2)'d on OpenBSD
 - change text in `description` of bare git repository to get actual descriptions
 
-LICENSE
+### LICENSE
 
-legit is licensed under MIT.
+legit is licensed under MIT
