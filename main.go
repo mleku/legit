@@ -15,6 +15,7 @@ var log, chk = slog.New(os.Stderr)
 
 func main() {
 	slog.SetLogLevel(slog.Trace)
+	log.I.Ln("logging")
 	var cfg string
 	flag.StringVar(&cfg, "config", "./config.yaml", "path to config file")
 	flag.Parse()
