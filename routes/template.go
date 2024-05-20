@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"html/template"
 	"io"
-	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -17,7 +16,7 @@ func (d *deps) Write404(w http.ResponseWriter) {
 	t := template.Must(template.ParseGlob(tpath))
 	w.WriteHeader(404)
 	if err := t.ExecuteTemplate(w, "404", nil); err != nil {
-		log.Printf("404 template: %s", err)
+		log.E.F("404 template: %s", err)
 	}
 }
 
@@ -26,7 +25,7 @@ func (d *deps) Write500(w http.ResponseWriter) {
 	t := template.Must(template.ParseGlob(tpath))
 	w.WriteHeader(500)
 	if err := t.ExecuteTemplate(w, "500", nil); err != nil {
-		log.Printf("500 template: %s", err)
+		log.E.F("500 template: %s", err)
 	}
 }
 
@@ -38,7 +37,7 @@ func (d *deps) listFiles(files []git.NiceTree, data map[string]any, w http.Respo
 	data["meta"] = d.c.Meta
 
 	if err := t.ExecuteTemplate(w, "tree", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }
@@ -76,7 +75,7 @@ func (d *deps) showFile(content string, data map[string]any, w http.ResponseWrit
 	lc, err := countLines(strings.NewReader(content))
 	if err != nil {
 		// Non-fatal, we'll just skip showing line numbers in the template.
-		log.Printf("counting lines: %s", err)
+		log.E.F("counting lines: %s", err)
 	}
 
 	lines := make([]int, lc)
@@ -91,7 +90,7 @@ func (d *deps) showFile(content string, data map[string]any, w http.ResponseWrit
 	data["meta"] = d.c.Meta
 
 	if err := t.ExecuteTemplate(w, "file", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }

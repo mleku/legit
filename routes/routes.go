@@ -3,7 +3,6 @@ package routes
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -26,7 +25,7 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 	dirs, err := os.ReadDir(d.c.Repo.ScanPath)
 	if err != nil {
 		d.Write500(w)
-		log.Printf("reading scan path: %s", err)
+		log.E.F("reading scan path: %s", err)
 		return
 	}
 
@@ -45,14 +44,14 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 		path := filepath.Join(d.c.Repo.ScanPath, dir.Name())
 		gr, err := git.Open(path, "")
 		if err != nil {
-			log.Println(err)
+			log.E.Ln(err)
 			continue
 		}
 
 		c, err := gr.LastCommit()
 		if err != nil {
 			d.Write500(w)
-			log.Println(err)
+			log.E.Ln(err)
 			return
 		}
 
@@ -78,7 +77,7 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 	data["info"] = infos
 
 	if err := t.ExecuteTemplate(w, "index", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }
@@ -101,7 +100,7 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	commits, err := gr.Commits()
 	if err != nil {
 		d.Write500(w)
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -128,13 +127,13 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if readmeContent == "" {
-		log.Printf("no readme found for %s", name)
+		log.E.Ln("no readme found for %s", name)
 	}
 
 	mainBranch, err := gr.FindMainBranch(d.c.Repo.MainBranch)
 	if err != nil {
 		d.Write500(w)
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -156,7 +155,7 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	data["gomod"] = isGoModule(gr)
 
 	if err := t.ExecuteTemplate(w, "repo", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -183,7 +182,7 @@ func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
 	files, err := gr.FileTree(treePath)
 	if err != nil {
 		d.Write500(w)
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -253,7 +252,7 @@ func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
 	commits, err := gr.Commits()
 	if err != nil {
 		d.Write500(w)
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -269,7 +268,7 @@ func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
 	data["log"] = true
 
 	if err := t.ExecuteTemplate(w, "log", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }
@@ -292,7 +291,7 @@ func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
 	diff, err := gr.Diff()
 	if err != nil {
 		d.Write500(w)
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 
@@ -310,7 +309,7 @@ func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
 	data["desc"] = getDescription(path)
 
 	if err := t.ExecuteTemplate(w, "commit", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }
@@ -332,12 +331,12 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 	tags, err := gr.Tags()
 	if err != nil {
 		// Non-fatal, we *should* have at least one branch to show.
-		log.Println(err)
+		log.E.Ln(err)
 	}
 
 	branches, err := gr.Branches()
 	if err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		d.Write500(w)
 		return
 	}
@@ -354,7 +353,7 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 	data["desc"] = getDescription(path)
 
 	if err := t.ExecuteTemplate(w, "refs", data); err != nil {
-		log.Println(err)
+		log.E.Ln(err)
 		return
 	}
 }

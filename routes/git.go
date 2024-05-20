@@ -2,7 +2,6 @@ package routes
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"path/filepath"
 
@@ -24,7 +23,7 @@ func (d *deps) InfoRefs(w http.ResponseWriter, r *http.Request) {
 	ep, err := transport.NewEndpoint("/")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
@@ -34,7 +33,7 @@ func (d *deps) InfoRefs(w http.ResponseWriter, r *http.Request) {
 	session, err := srv.NewUploadPackSession(ep, nil)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
@@ -54,7 +53,7 @@ func (d *deps) InfoRefs(w http.ResponseWriter, r *http.Request) {
 
 	if err = ar.Encode(w); err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 }
@@ -71,14 +70,14 @@ func (d *deps) UploadPack(w http.ResponseWriter, r *http.Request) {
 	err := upr.Decode(r.Body)
 	if err != nil {
 		http.Error(w, err.Error(), 400)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
 	ep, err := transport.NewEndpoint("/")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
@@ -88,20 +87,20 @@ func (d *deps) UploadPack(w http.ResponseWriter, r *http.Request) {
 	session, err := svr.NewUploadPackSession(ep, nil)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
 	res, err := session.UploadPack(r.Context(), upr)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 
 	if err = res.Encode(w); err != nil {
 		http.Error(w, err.Error(), 500)
-		log.Printf("git: %s", err)
+		log.E.F("git: %s", err)
 		return
 	}
 }
