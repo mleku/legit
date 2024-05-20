@@ -1,24 +1,31 @@
 :root {
-  --light: #f4f4f4;
+  --background: #000;
   --cyan: #509c93;
-  --light-gray: #eee;
+  --light-gray: #ccc;
   --medium-gray: #ddd;
-  --gray: #6a6a6a;
-  --dark: #444;
-  --darker: #222;
+  --gray: #666;
+  --dark: #aaa;
+  --darker: #888;
+  --darkest: #444;
 
   --sans-font: "InterVar", -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", sans-serif;
   --display-font: "InterDisplay", -apple-system, BlinkMacSystemFont, "Roboto", "Segoe UI", sans-serif;
   --mono-font: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', 'Roboto Mono', Menlo, Consolas, monospace;
 }
 
+p {
+  padding: 0.5em;
+}
+
 html {
-  background: var(--light);
+  background: var(--background);
+  color: var(--light-gray);
   -webkit-text-size-adjust: none;
   font-family: var(--sans-font);
 }
 
 pre {
+  color: var(--light-gray);
   font-family: var(--mono-font);
 }
 
@@ -84,16 +91,13 @@ nav ul li {
 }
 
 a {
+  color: var(--light-gray);
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   text-decoration: none;
   word-wrap: break-word;
-}
-
-a {
-  color: var(--darker);
-  border-bottom: 1.5px solid var(--medium-gray);
+  border-bottom: 1.5px solid var(--darkest);
 }
 
 a:hover {
@@ -157,7 +161,7 @@ a:hover {
 }
 
 .readme {
-  background: var(--light-gray);
+  background: var(--darkest);
   padding: 0.5rem;
 }
 
