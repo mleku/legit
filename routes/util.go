@@ -19,7 +19,6 @@ func isGoModule(gr *git.GitRepo) bool {
 
 func getDescription(path string) (desc string) {
 	descFile := filepath.Join(path, "description")
-	log.I.Ln("desc", descFile)
 	db, err := os.ReadFile(descFile)
 	if err == nil {
 		desc = string(db)
