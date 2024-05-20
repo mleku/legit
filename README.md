@@ -7,23 +7,22 @@ Frenchman, and saying "Oui, il est le git!"
 
 But yeah it's pretty legit, no cap on god fr fr
 
-
-## FEATURES
+## features
 
 - Fully customizable templates and stylesheets.
-- Cloning over http(s).
-- Less archaic HTML.
-- Not CGI.
+- Cloning over http(s)
+- Less archaic HTML
+- Not CGI
 
-## INSTALLING
+## installing
 
-Clone it, 'go build' it.
+Clone it, 'go build' it
 
 
-## CONFIG
+## config
 
 Uses yaml for configuration. Looks for a 'config.yaml' in the current
-directory by default; pass the '--config' flag to point it elsewhere.
+directory by default; pass the '--config' flag to point it elsewhere
 
 Example config.yaml:
 
@@ -54,14 +53,14 @@ Example config.yaml:
 These options are fairly self-explanatory, but of note are:
 
 - repo.scanPath: where all your git repos live (or die). legit doesn't
-  traverse subdirs yet.
-- dirs: use this to override the default templates and static assets.
-- repo.readme: readme files to look for.
-- repo.mainBranch: main branch names to look for.
-- repo.ignore: repos to ignore, relative to scanPath.
-- server.name: used for go-import meta tags and clone URLs.
+  traverse subdirs yet
+- dirs: use this to override the default templates and static assets
+- repo.readme: readme files to look for
+- repo.mainBranch: main branch names to look for
+- repo.ignore: repos to ignore, relative to scanPath
+- server.name: used for go-import meta tags and clone URLs
 
-## NOTES
+## notes
 
 - Run legit behind a TLS terminating proxy like relayd(8) or nginx
 - Cloning only works in bare repos -- this is a limitation inherent to git. You
@@ -73,6 +72,6 @@ These options are fairly self-explanatory, but of note are:
 - Paths are unveil(2)'d on OpenBSD
 - change text in `description` of bare git repository to get actual descriptions
 
-## LICENSE
+## license
 
 legit is licensed under MIT

@@ -85,6 +85,7 @@ main h1 {
     color: var(--gray);
     font-size: 2em;
     padding: 0.25em;
+    font-weight:900;
 }
 
 main h2 {
