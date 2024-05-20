@@ -1,4 +1,4 @@
-# legit
+# LEGIT
 
 A git web frontend written in Go
 
