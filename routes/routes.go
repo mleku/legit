@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
-	"git.icyphox.sh/legit/config"
-	"git.icyphox.sh/legit/git"
 	"github.com/dustin/go-humanize"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
+	"mleku.net/legit/config"
+	"mleku.net/legit/git"
 )
 
 type deps struct {

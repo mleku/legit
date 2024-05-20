@@ -3,21 +3,25 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 
-	"git.icyphox.sh/legit/config"
-	"git.icyphox.sh/legit/routes"
+	"mleku.dev/git/slog"
+	"mleku.net/legit/config"
+	"mleku.net/legit/routes"
 )
 
+var log, chk = slog.New(os.Stderr)
+
 func main() {
+	slog.SetLogLevel(slog.Trace)
 	var cfg string
 	flag.StringVar(&cfg, "config", "./config.yaml", "path to config file")
 	flag.Parse()
 
 	c, err := config.Read(cfg)
 	if err != nil {
-		log.Fatal(err)
+		log.F.Ln(err)
 	}
 
 	if err := UnveilPaths([]string{
@@ -26,11 +30,11 @@ func main() {
 		c.Dirs.Templates,
 	},
 		"r"); err != nil {
-		log.Fatalf("unveil: %s", err)
+		log.F.F("unveil: %s", err)
 	}
 
 	mux := routes.Handlers(c)
 	addr := fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)
-	log.Println("starting server on", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.I.Ln("starting server on", addr)
+	log.F.Ln(http.ListenAndServe(addr, mux))
 }

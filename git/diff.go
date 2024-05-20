@@ -26,6 +26,7 @@ type Diff struct {
 }
 
 // A nicer git diff representation.
+
 type NiceDiff struct {
 	Commit struct {
 		Message string

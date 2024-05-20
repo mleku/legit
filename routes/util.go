@@ -2,13 +2,15 @@ package routes
 
 import (
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"git.icyphox.sh/legit/git"
+	"mleku.dev/git/slog"
+	"mleku.net/legit/git"
 )
+
+var log, chk = slog.New(os.Stderr)
 
 func isGoModule(gr *git.GitRepo) bool {
 	_, err := gr.FileContent("go.mod")
@@ -16,7 +18,9 @@ func isGoModule(gr *git.GitRepo) bool {
 }
 
 func getDescription(path string) (desc string) {
-	db, err := os.ReadFile(filepath.Join(path, "description"))
+	descFile := filepath.Join(path, "description")
+	log.I.Ln("desc", descFile)
+	db, err := os.ReadFile(descFile)
 	if err == nil {
 		desc = string(db)
 	} else {
@@ -65,7 +69,7 @@ func (d *deps) getAllRepos() ([]repoInfo, error) {
 			if _, err := os.Lstat(filepath.Join(path, "HEAD")); err == nil {
 				repo, err := git.Open(path, "")
 				if err != nil {
-					log.Println(err)
+					log.E.Ln(err)
 				} else {
 					relpath, _ := filepath.Rel(d.c.Repo.ScanPath, path)
 					repos = append(repos, repoInfo{
