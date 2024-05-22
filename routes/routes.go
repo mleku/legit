@@ -284,6 +284,7 @@ func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
+	log.I.Ln("refs")
 	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {

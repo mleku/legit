@@ -60,7 +60,6 @@ func (d *deps) UploadPack(w http.ResponseWriter, r *http.Request) {
 	repo := filepath.Join(d.c.Repo.ScanPath, name)
 	w.Header().Set("content-type", "application/x-git-upload-pack-result")
 	upr := packp.NewUploadPackRequest()
-	// if err = upr.Decode(r.Body); chk.E(err) {
 	if err = upr.Decode(r.Body); chk.E(err) {
 		var rdr io.Reader
 		if rdr, err = gzip.NewReader(r.Body); !chk.E(err) {

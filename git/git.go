@@ -93,12 +93,26 @@ func (g *GitRepo) FileContent(path string) (content string, err error) {
 }
 
 func (g *GitRepo) Tags() (tags []*object.Tag, err error) {
+	log.I.Ln("tags")
 	var ti *object.TagIter
 	if ti, err = g.r.TagObjects(); chk.E(err) {
 		err = log.E.Err("tag objects: %w", err)
 		return
 	}
+	var tg storer.ReferenceIter
+	if tg, err = g.r.Tags(); chk.E(err) {
+	}
+	chk.E(tg.ForEach(func(pr *plumbing.Reference) (err error) {
+		log.I.S(pr)
+		tags = append(tags, &object.Tag{
+			Hash:   pr.Hash(),
+			Name:   pr.Name().String(),
+			Target: pr.Hash(),
+		})
+		return
+	}))
 	chk.E(ti.ForEach(func(t *object.Tag) (err error) {
+		log.I.S(t)
 		for i, existing := range tags {
 			if existing.Name == t.Name {
 				if t.Tagger.When.After(existing.Tagger.When) {
