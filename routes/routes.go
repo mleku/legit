@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
@@ -63,9 +64,10 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 	})
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-	data := make(map[string]interface{})
-	data["meta"] = d.c.Meta
-	data["info"] = infos
+	data := map[string]any{
+		"meta": d.c.Meta,
+		"info": infos,
+	}
 	if err = t.ExecuteTemplate(w, "index", data); chk.E(err) {
 		return
 	}
@@ -125,15 +127,16 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	if len(commits) >= 3 {
 		commits = commits[:3]
 	}
-	data := make(map[string]any)
-	data["name"] = name
-	data["ref"] = mainBranch
-	data["readme"] = readmeContent
-	data["commits"] = commits
-	data["desc"] = getDescription(path)
-	data["servername"] = d.c.Server.Name
-	data["meta"] = d.c.Meta
-	data["gomod"] = isGoModule(gr)
+	data := map[string]any{
+		"name":       name,
+		"ref":        mainBranch,
+		"readme":     readmeContent,
+		"commits":    commits,
+		"desc":       getDescription(path),
+		"servername": d.c.Server.Name,
+		"meta":       d.c.Meta,
+		"gomod":      isGoModule(gr),
+	}
 	if err = t.ExecuteTemplate(w, "repo", data); chk.E(err) {
 		return
 	}
@@ -162,12 +165,13 @@ func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
 		d.Write500(w)
 		return
 	}
-	data := make(map[string]any)
-	data["name"] = name
-	data["ref"] = ref
-	data["parent"] = treePath
-	data["desc"] = getDescription(path)
-	data["dotdot"] = filepath.Dir(treePath)
+	data := map[string]any{
+		"name":   name,
+		"ref":    ref,
+		"parent": treePath,
+		"desc":   getDescription(path),
+		"dotdot": filepath.Dir(treePath),
+	}
 	d.listFiles(files, data, w)
 	return
 }
@@ -195,11 +199,12 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 	var contents string
 	if contents, err = gr.FileContent(treePath); chk.E(err) {
 	}
-	data := make(map[string]any)
-	data["name"] = name
-	data["ref"] = ref
-	data["desc"] = getDescription(path)
-	data["path"] = treePath
+	data := map[string]any{
+		"name": name,
+		"ref":  ref,
+		"desc": getDescription(path),
+		"path": treePath,
+	}
 	if raw {
 		d.showRaw(contents, w)
 	} else {
@@ -209,125 +214,108 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) Log(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
+		log.E.Ln(name, "is ignored")
 		d.Write404(w)
 		return
 	}
 	ref := r.PathValue("ref")
-
 	path := filepath.Join(d.c.Repo.ScanPath, name)
-	gr, err := git.Open(path, ref)
-	if err != nil {
+	var gr *git.GitRepo
+	if gr, err = git.Open(path, ref); chk.E(err) {
 		d.Write404(w)
 		return
 	}
-
-	commits, err := gr.Commits()
-	if err != nil {
+	var commits []*object.Commit
+	if commits, err = gr.Commits(); chk.E(err) {
 		d.Write500(w)
-		log.E.Ln(err)
 		return
 	}
-
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-
-	data := make(map[string]interface{})
-	data["commits"] = commits
-	data["meta"] = d.c.Meta
-	data["name"] = name
-	data["ref"] = ref
-	data["desc"] = getDescription(path)
-	data["log"] = true
-
-	if err := t.ExecuteTemplate(w, "log", data); err != nil {
-		log.E.Ln(err)
+	data := map[string]any{
+		"commits": commits,
+		"meta":    d.c.Meta,
+		"name":    name,
+		"ref":     ref,
+		"desc":    getDescription(path),
+		"log":     true,
+	}
+	if err = t.ExecuteTemplate(w, "log", data); chk.E(err) {
 		return
 	}
 }
 
 func (d *deps) Diff(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
 		d.Write404(w)
 		return
 	}
 	ref := r.PathValue("ref")
-
 	path := filepath.Join(d.c.Repo.ScanPath, name)
-	gr, err := git.Open(path, ref)
-	if err != nil {
+	var gr *git.GitRepo
+	if gr, err = git.Open(path, ref); chk.E(err) {
 		d.Write404(w)
 		return
 	}
-
-	diff, err := gr.Diff()
-	if err != nil {
+	var dif *git.NiceDiff
+	if dif, err = gr.Diff(); chk.E(err) {
 		d.Write500(w)
-		log.E.Ln(err)
 		return
 	}
-
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-
-	data := make(map[string]interface{})
-
-	data["commit"] = diff.Commit
-	data["stat"] = diff.Stat
-	data["diff"] = diff.Diff
-	data["meta"] = d.c.Meta
-	data["name"] = name
-	data["ref"] = ref
-	data["desc"] = getDescription(path)
-
-	if err := t.ExecuteTemplate(w, "commit", data); err != nil {
-		log.E.Ln(err)
+	data := map[string]any{
+		"commit": dif.Commit,
+		"stat":   dif.Stat,
+		"diff":   dif.Diff,
+		"meta":   d.c.Meta,
+		"name":   name,
+		"ref":    ref,
+		"desc":   getDescription(path),
+	}
+	if err = t.ExecuteTemplate(w, "commit", data); chk.E(err) {
 		return
 	}
 }
 
 func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
+		log.E.Ln(name, "is ignored")
 		d.Write404(w)
 		return
 	}
-
 	path := filepath.Join(d.c.Repo.ScanPath, name)
-	gr, err := git.Open(path, "")
-	if err != nil {
+	var gr *git.GitRepo
+	if gr, err = git.Open(path, ""); chk.E(err) {
 		d.Write404(w)
 		return
 	}
-
-	tags, err := gr.Tags()
-	if err != nil {
+	var tags []*object.Tag
+	if tags, err = gr.Tags(); chk.E(err) {
 		// Non-fatal, we *should* have at least one branch to show.
-		log.E.Ln(err)
 	}
-
-	branches, err := gr.Branches()
-	if err != nil {
-		log.E.Ln(err)
+	var branches []*plumbing.Reference
+	if branches, err = gr.Branches(); chk.E(err) {
 		d.Write500(w)
 		return
 	}
-
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-
-	data := make(map[string]interface{})
-
-	data["meta"] = d.c.Meta
-	data["name"] = name
-	data["branches"] = branches
-	data["tags"] = tags
-	data["desc"] = getDescription(path)
-
-	if err := t.ExecuteTemplate(w, "refs", data); err != nil {
-		log.E.Ln(err)
+	data := map[string]any{
+		"meta":     d.c.Meta,
+		"name":     name,
+		"branches": branches,
+		"tags":     tags,
+		"desc":     getDescription(path),
+	}
+	if err = t.ExecuteTemplate(w, "refs", data); chk.E(err) {
 		return
 	}
 }
@@ -335,6 +323,5 @@ func (d *deps) Refs(w http.ResponseWriter, r *http.Request) {
 func (d *deps) ServeStatic(w http.ResponseWriter, r *http.Request) {
 	f := r.PathValue("file")
 	f = filepath.Clean(filepath.Join(d.c.Dirs.Static, f))
-
 	http.ServeFile(w, r, f)
 }
