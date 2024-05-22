@@ -5,14 +5,6 @@
 
 package main
 
-func Unveil(path string, perms string) error {
-	return nil
-}
-
-func UnveilBlock() error {
-	return nil
-}
-
-func UnveilPaths(paths []string, perms string) error {
-	return nil
-}
+func Unveil(_ string, _ string) error        { return nil }
+func UnveilBlock() error                     { return nil }
+func UnveilPaths(_ []string, _ string) error { return nil }

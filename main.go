@@ -19,21 +19,18 @@ func main() {
 	var cfg string
 	flag.StringVar(&cfg, "config", "./config.yaml", "path to config file")
 	flag.Parse()
-
-	c, err := config.Read(cfg)
-	if err != nil {
-		log.F.Ln(err)
+	var err error
+	var c *config.Config
+	if c, err = config.Read(cfg); chk.E(err) {
+		return
 	}
-
-	if err := UnveilPaths([]string{
+	if err = UnveilPaths([]string{
 		c.Dirs.Static,
 		c.Repo.ScanPath,
 		c.Dirs.Templates,
-	},
-		"r"); err != nil {
-		log.F.F("unveil: %s", err)
+	}, "r"); chk.E(err) {
+		return
 	}
-
 	mux := routes.Handlers(c)
 	addr := fmt.Sprintf("%s:%d", c.Server.Host, c.Server.Port)
 	log.I.Ln("starting server on", addr)

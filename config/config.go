@@ -6,7 +6,10 @@ import (
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
+	"mleku.dev/git/slog"
 )
+
+var log, chk = slog.New(os.Stderr)
 
 type Config struct {
 	Repo struct {
@@ -30,17 +33,16 @@ type Config struct {
 	} `yaml:"server"`
 }
 
-func Read(f string) (*Config, error) {
-	b, err := os.ReadFile(f)
-	if err != nil {
-		return nil, fmt.Errorf("reading config: %w", err)
+func Read(f string) (c *Config, err error) {
+	var b []byte
+	if b, err = os.ReadFile(f); chk.E(err) {
+		err = log.E.Err("reading config: %w", err)
+		return
 	}
-
-	c := Config{}
-	if err := yaml.Unmarshal(b, &c); err != nil {
+	c = &Config{}
+	if err = yaml.Unmarshal(b, c); chk.E(err) {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
-
 	if c.Repo.ScanPath, err = filepath.Abs(c.Repo.ScanPath); err != nil {
 		return nil, err
 	}
@@ -50,6 +52,5 @@ func Read(f string) (*Config, error) {
 	if c.Dirs.Static, err = filepath.Abs(c.Dirs.Static); err != nil {
 		return nil, err
 	}
-
-	return &c, nil
+	return
 }
