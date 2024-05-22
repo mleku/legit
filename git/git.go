@@ -2,12 +2,17 @@ package git
 
 import (
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/storer"
+	"mleku.dev/git/slog"
 )
+
+var log, chk = slog.New(os.Stderr)
 
 type GitRepo struct {
 	r *git.Repository
@@ -16,141 +21,120 @@ type GitRepo struct {
 
 type TagList []*object.Tag
 
-func (self TagList) Len() int {
-	return len(self)
-}
+func (t TagList) Len() int           { return len(t) }
+func (t TagList) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
+func (t TagList) Less(i, j int) bool { return t[i].Tagger.When.After(t[j].Tagger.When) }
 
-func (self TagList) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
-}
-
-// sorting tags in reverse chronological order
-func (self TagList) Less(i, j int) bool {
-	return self[i].Tagger.When.After(self[j].Tagger.When)
-}
-
-func Open(path string, ref string) (*GitRepo, error) {
-	var err error
-	g := GitRepo{}
-	g.r, err = git.PlainOpen(path)
+func Open(path string, ref string) (gr *GitRepo, err error) {
+	gr = &GitRepo{}
+	gr.r, err = git.PlainOpen(path)
 	if err != nil {
 		return nil, fmt.Errorf("opening %s: %w", path, err)
 	}
-
 	if ref == "" {
-		head, err := g.r.Head()
-		if err != nil {
-			return nil, fmt.Errorf("getting head of %s: %w", path, err)
+		var head *plumbing.Reference
+		if head, err = gr.r.Head(); chk.E(err) {
+			err = log.E.Err("getting head of %s: %w", path, err)
+			return
 		}
-		g.h = head.Hash()
+		gr.h = head.Hash()
 	} else {
-		hash, err := g.r.ResolveRevision(plumbing.Revision(ref))
-		if err != nil {
-			return nil, fmt.Errorf("resolving rev %s for %s: %w", ref, path, err)
+		var h *plumbing.Hash
+		if h, err = gr.r.ResolveRevision(plumbing.Revision(ref)); chk.E(err) {
+			err = log.E.Err("resolving rev %s for %s: %w", ref, path, err)
+			return
 		}
-		g.h = *hash
+		gr.h = *h
 	}
-	return &g, nil
+	return
 }
 
-func (g *GitRepo) Commits() ([]*object.Commit, error) {
-	ci, err := g.r.Log(&git.LogOptions{From: g.h})
-	if err != nil {
-		return nil, fmt.Errorf("commits from ref: %w", err)
+func (g *GitRepo) Commits() (oc []*object.Commit, err error) {
+	var ci object.CommitIter
+	if ci, err = g.r.Log(&git.LogOptions{From: g.h}); chk.E(err) {
+		err = log.E.Err("commits from ref: %w", err)
+		return
 	}
-
-	commits := []*object.Commit{}
-	ci.ForEach(func(c *object.Commit) error {
-		commits = append(commits, c)
-		return nil
-	})
-
-	return commits, nil
+	oc = []*object.Commit{}
+	chk.E(ci.ForEach(func(c *object.Commit) (err error) {
+		oc = append(oc, c)
+		return
+	}))
+	return
 }
 
-func (g *GitRepo) LastCommit() (*object.Commit, error) {
-	c, err := g.r.CommitObject(g.h)
-	if err != nil {
-		return nil, fmt.Errorf("last commit: %w", err)
-	}
-	return c, nil
+func (g *GitRepo) LastCommit() (oc *object.Commit, err error) {
+	return g.r.CommitObject(g.h)
 }
 
-func (g *GitRepo) FileContent(path string) (string, error) {
-	c, err := g.r.CommitObject(g.h)
-	if err != nil {
-		return "", fmt.Errorf("commit object: %w", err)
+func (g *GitRepo) FileContent(path string) (content string, err error) {
+	var c *object.Commit
+	if c, err = g.r.CommitObject(g.h); chk.E(err) {
+		err = log.E.Err("commit object: %w", err)
+		return
 	}
-
-	tree, err := c.Tree()
-	if err != nil {
-		return "", fmt.Errorf("file tree: %w", err)
+	var tree *object.Tree
+	if tree, err = c.Tree(); chk.E(err) {
+		err = log.E.Err("file tree: %w", err)
+		return
 	}
-
-	file, err := tree.File(path)
-	if err != nil {
-		return "", err
+	var file *object.File
+	if file, err = tree.File(path); chk.E(err) {
+		err = log.E.Err("%s: %s", err, path)
+		return
 	}
-
-	isbin, _ := file.IsBinary()
-
-	if !isbin {
-		return file.Contents()
+	isBinary, _ := file.IsBinary()
+	if !isBinary {
+		content, err = file.Contents()
 	} else {
-		return "Not displaying binary file", nil
+		content = "Not displaying binary file"
 	}
+	return
 }
 
-func (g *GitRepo) Tags() ([]*object.Tag, error) {
-	ti, err := g.r.TagObjects()
-	if err != nil {
-		return nil, fmt.Errorf("tag objects: %w", err)
+func (g *GitRepo) Tags() (tags []*object.Tag, err error) {
+	var ti *object.TagIter
+	if ti, err = g.r.TagObjects(); chk.E(err) {
+		err = log.E.Err("tag objects: %w", err)
+		return
 	}
-
-	tags := []*object.Tag{}
-
-	_ = ti.ForEach(func(t *object.Tag) error {
+	chk.E(ti.ForEach(func(t *object.Tag) (err error) {
 		for i, existing := range tags {
 			if existing.Name == t.Name {
 				if t.Tagger.When.After(existing.Tagger.When) {
 					tags[i] = t
 				}
-				return nil
+				return
 			}
 		}
 		tags = append(tags, t)
-		return nil
-	})
-
-	var tagList TagList
-	tagList = tags
-	sort.Sort(tagList)
-
-	return tags, nil
+		return
+	}))
+	t := TagList(tags)
+	sort.Sort(t)
+	tags = t
+	return
 }
 
-func (g *GitRepo) Branches() ([]*plumbing.Reference, error) {
-	bi, err := g.r.Branches()
-	if err != nil {
-		return nil, fmt.Errorf("branchs: %w", err)
+func (g *GitRepo) Branches() (branches []*plumbing.Reference, err error) {
+	var bi storer.ReferenceIter
+	if bi, err = g.r.Branches(); chk.E(err) {
+		err = log.E.Err("branches: %w", err)
+		return
 	}
-
-	branches := []*plumbing.Reference{}
-
-	_ = bi.ForEach(func(ref *plumbing.Reference) error {
+	chk.E(bi.ForEach(func(ref *plumbing.Reference) (err error) {
 		branches = append(branches, ref)
-		return nil
-	})
-
-	return branches, nil
+		return
+	}))
+	return
 }
 
-func (g *GitRepo) FindMainBranch(branches []string) (string, error) {
-	for _, b := range branches {
-		_, err := g.r.ResolveRevision(plumbing.Revision(b))
-		if err == nil {
-			return b, nil
+func (g *GitRepo) FindMainBranch(branches []string) (b string, err error) {
+	for _, b = range branches {
+		if _, err = g.r.ResolveRevision(plumbing.Revision(b)); !chk.E(err) {
+			return
 		}
 	}
-	return "", fmt.Errorf("unable to find main branch")
+	err = log.E.Err("unable to find main branch")
+	return
 }

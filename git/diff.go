@@ -1,8 +1,6 @@
 package git
 
 import (
-	"fmt"
-	"log"
 	"strings"
 
 	"github.com/bluekeyes/go-gitdiff/gitdiff"
@@ -42,44 +40,37 @@ type NiceDiff struct {
 	Diff []Diff
 }
 
-func (g *GitRepo) Diff() (*NiceDiff, error) {
-	c, err := g.r.CommitObject(g.h)
-	if err != nil {
-		return nil, fmt.Errorf("commit object: %w", err)
+func (g *GitRepo) Diff() (nd *NiceDiff, err error) {
+	var c *object.Commit
+	if c, err = g.r.CommitObject(g.h); chk.E(err) {
+		return nil, log.E.Err("commit object: %w", err)
 	}
-
 	patch := &object.Patch{}
-	commitTree, err := c.Tree()
 	parent := &object.Commit{}
-	if err == nil {
+	var commitTree *object.Tree
+	if commitTree, err = c.Tree(); chk.E(err) {
 		parentTree := &object.Tree{}
 		if c.NumParents() != 0 {
-			parent, err = c.Parents().Next()
-			if err == nil {
-				parentTree, err = parent.Tree()
-				if err == nil {
-					patch, err = parentTree.Patch(commitTree)
-					if err != nil {
-						return nil, fmt.Errorf("patch: %w", err)
+			if parent, err = c.Parents().Next(); !chk.E(err) {
+				if parentTree, err = parent.Tree(); !chk.E(err) {
+					if patch, err = parentTree.Patch(commitTree); chk.E(err) {
+						return nil, log.E.Err("patch: %w", err)
 					}
 				}
 			}
 		} else {
-			patch, err = parentTree.Patch(commitTree)
-			if err != nil {
-				return nil, fmt.Errorf("patch: %w", err)
+			if patch, err = parentTree.Patch(commitTree); chk.E(err) {
+				return nil, log.E.Err("patch: %w", err)
 			}
 		}
 	}
-
-	diffs, _, err := gitdiff.Parse(strings.NewReader(patch.String()))
-	if err != nil {
-		log.Println(err)
+	var diffs []*gitdiff.File
+	if diffs, _, err = gitdiff.Parse(strings.NewReader(patch.String())); chk.E(err) {
+		return
 	}
 
-	nd := NiceDiff{}
+	nd = &NiceDiff{}
 	nd.Commit.This = c.Hash.String()
-
 	if parent.Hash.IsZero() {
 		nd.Commit.Parent = ""
 	} else {
@@ -87,17 +78,15 @@ func (g *GitRepo) Diff() (*NiceDiff, error) {
 	}
 	nd.Commit.Author = c.Author
 	nd.Commit.Message = c.Message
-
 	for _, d := range diffs {
-		ndiff := Diff{}
-		ndiff.Name.New = d.NewName
-		ndiff.Name.Old = d.OldName
-		ndiff.IsBinary = d.IsBinary
-		ndiff.IsNew = d.IsNew
-		ndiff.IsDelete = d.IsDelete
-
+		nDiff := Diff{}
+		nDiff.Name.New = d.NewName
+		nDiff.Name.Old = d.OldName
+		nDiff.IsBinary = d.IsBinary
+		nDiff.IsNew = d.IsNew
+		nDiff.IsDelete = d.IsDelete
 		for _, tf := range d.TextFragments {
-			ndiff.TextFragments = append(ndiff.TextFragments, TextFragment{
+			nDiff.TextFragments = append(nDiff.TextFragments, TextFragment{
 				Header: tf.Header(),
 				Lines:  tf.Lines,
 			})
@@ -107,14 +96,13 @@ func (g *GitRepo) Diff() (*NiceDiff, error) {
 					nd.Stat.Insertions += 1
 				case gitdiff.OpDelete:
 					nd.Stat.Deletions += 1
+				default:
+					panic("unhandled default case")
 				}
 			}
 		}
-
-		nd.Diff = append(nd.Diff, ndiff)
+		nd.Diff = append(nd.Diff, nDiff)
 	}
-
 	nd.Stat.FilesChanged = len(diffs)
-
-	return &nd, nil
+	return
 }
