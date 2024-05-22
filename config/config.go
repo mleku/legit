@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
-	"mleku.dev/git/slog"
+	"mleku.net/slog"
 )
 
 var log, chk = slog.New(os.Stderr)

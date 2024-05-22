@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"mleku.dev/git/slog"
 	"mleku.net/legit/config"
 	"mleku.net/legit/routes"
+	"mleku.net/slog"
 )
 
 var log, chk = slog.New(os.Stderr)

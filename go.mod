@@ -11,7 +11,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0
 	golang.org/x/sys v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
-	mleku.dev/git/slog v1.0.16
+	mleku.net/slog v1.0.17
 )
 
 require (

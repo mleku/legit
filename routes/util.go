@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mleku.dev/git/slog"
 	"mleku.net/legit/git"
+	"mleku.net/slog"
 )
 
 var log, chk = slog.New(os.Stderr)
