@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -23,7 +24,7 @@ type TagList []*object.Tag
 
 func (t TagList) Len() int           { return len(t) }
 func (t TagList) Swap(i, j int)      { t[i], t[j] = t[j], t[i] }
-func (t TagList) Less(i, j int) bool { return t[i].Tagger.When.After(t[j].Tagger.When) }
+func (t TagList) Less(i, j int) bool { return t[j].Tagger.When.After(t[i].Tagger.When) }
 
 func Open(path string, ref string) (gr *GitRepo, err error) {
 	gr = &GitRepo{}
@@ -104,9 +105,11 @@ func (g *GitRepo) Tags() (tags []*object.Tag, err error) {
 	}
 	chk.E(tg.ForEach(func(pr *plumbing.Reference) (err error) {
 		log.I.S(pr)
+		name := pr.Name().String()
+		split := strings.Split(name, "/")
 		tags = append(tags, &object.Tag{
 			Hash:   pr.Hash(),
-			Name:   pr.Name().String(),
+			Name:   split[2],
 			Target: pr.Hash(),
 		})
 		return

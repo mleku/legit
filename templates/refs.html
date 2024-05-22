@@ -22,13 +22,8 @@
       <div class="refs">
       {{ range .tags }}
       <div>
-      <strong>{{ .Name }}</strong>
-      <a href="/{{ $name }}/tree/{{ .Name }}/">browse</a>
-      <a href="/{{ $name }}/log/{{ .Name }}">log</a>
-      {{ if .Message }}
-      <pre>{{ .Message }}</pre>
-      </div>
-      {{ end }}
+<pre>{{ .Name }} commit: <a href="/{{ $name }}/commit/{{ .Hash }}">{{ .Hash }}</a> <a href="/{{ $name }}/tree/{{ .Name }}/">tree</a> {{ if .Message }}{{ .Message }}{{ end }}</pre>
+        </div>
       {{ end }}
       </div>
       {{ end }}
