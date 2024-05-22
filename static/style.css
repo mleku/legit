@@ -142,9 +142,10 @@ a:hover {
 }
 
 .index {
+    margin:2em;
     display: grid;
     grid-template-columns: 6em 1fr minmax(0, 10em);
-    grid-row-gap: 0.5em;
+    grid-row-gap: 0;
     min-width: 0;
 }
 
