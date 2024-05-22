@@ -13,44 +13,37 @@ import (
 )
 
 func (d *deps) InfoRefs(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	name = filepath.Clean(name)
-
 	repo := filepath.Join(d.c.Repo.ScanPath, name)
-
 	w.Header().Set("content-type", "application/x-git-upload-pack-advertisement")
-
-	ep, err := transport.NewEndpoint("/")
-	if err != nil {
+	var ep *transport.Endpoint
+	if ep, err = transport.NewEndpoint("/"); chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return
 	}
-
 	billyfs := osfs.New(repo)
 	loader := server.NewFilesystemLoader(billyfs)
 	srv := server.NewServer(loader)
-	session, err := srv.NewUploadPackSession(ep, nil)
-	if err != nil {
+	var sess transport.UploadPackSession
+	if sess, err = srv.NewUploadPackSession(ep, nil); chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return
 	}
+	var ar *packp.AdvRefs
+	if ar, err = sess.AdvertisedReferencesContext(r.Context()); errors.Is(err,
+		transport.ErrRepositoryNotFound) {
 
-	ar, err := session.AdvertisedReferencesContext(r.Context())
-	if errors.Is(err, transport.ErrRepositoryNotFound) {
 		http.Error(w, err.Error(), 404)
 		return
-	} else if err != nil {
+	} else if chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
-	ar.Prefix = [][]byte{
-		[]byte("# service=git-upload-pack"),
-		pktline.Flush,
-	}
-
+	ar.Prefix = [][]byte{[]byte("# service=git-upload-pack"), pktline.Flush}
 	if err = ar.Encode(w); err != nil {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
@@ -59,46 +52,40 @@ func (d *deps) InfoRefs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *deps) UploadPack(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	name = filepath.Clean(name)
-
 	repo := filepath.Join(d.c.Repo.ScanPath, name)
-
 	w.Header().Set("content-type", "application/x-git-upload-pack-result")
-
 	upr := packp.NewUploadPackRequest()
-	err := upr.Decode(r.Body)
-	if err != nil {
+	if err = upr.Decode(r.Body); chk.E(err) {
 		http.Error(w, err.Error(), 400)
 		log.E.F("git: %s", err)
 		return
 	}
-
-	ep, err := transport.NewEndpoint("/")
+	var ep *transport.Endpoint
+	ep, err = transport.NewEndpoint("/")
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return
 	}
-
-	billyfs := osfs.New(repo)
-	loader := server.NewFilesystemLoader(billyfs)
+	bfs := osfs.New(repo)
+	loader := server.NewFilesystemLoader(bfs)
 	svr := server.NewServer(loader)
-	session, err := svr.NewUploadPackSession(ep, nil)
-	if err != nil {
+	var session transport.UploadPackSession
+	if session, err = svr.NewUploadPackSession(ep, nil); chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return
 	}
-
-	res, err := session.UploadPack(r.Context(), upr)
-	if err != nil {
+	var res *packp.UploadPackResponse
+	if res, err = session.UploadPack(r.Context(), upr); chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return
 	}
-
-	if err = res.Encode(w); err != nil {
+	if err = res.Encode(w); chk.E(err) {
 		http.Error(w, err.Error(), 500)
 		log.E.F("git: %s", err)
 		return

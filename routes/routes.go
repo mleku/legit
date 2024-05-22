@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/microcosm-cc/bluemonday"
 	"github.com/russross/blackfriday/v2"
 	"mleku.net/legit/config"
@@ -21,42 +22,35 @@ type deps struct {
 	c *config.Config
 }
 
+type info struct {
+	Name, Desc, Idle string
+	d                time.Time
+}
+
 func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
-	dirs, err := os.ReadDir(d.c.Repo.ScanPath)
-	if err != nil {
+	var err error
+	var dirs []os.DirEntry
+	if dirs, err = os.ReadDir(d.c.Repo.ScanPath); chk.E(err) {
 		d.Write500(w)
 		log.E.F("reading scan path: %s", err)
 		return
 	}
-
-	type info struct {
-		Name, Desc, Idle string
-		d                time.Time
-	}
-
-	infos := []info{}
-
+	var infos []info
 	for _, dir := range dirs {
 		if d.isIgnored(dir.Name()) {
 			continue
 		}
-
 		path := filepath.Join(d.c.Repo.ScanPath, dir.Name())
-		gr, err := git.Open(path, "")
-		if err != nil {
-			log.E.Ln(err)
+		var gr *git.GitRepo
+		if gr, err = git.Open(path, ""); chk.E(err) {
 			continue
 		}
-
-		c, err := gr.LastCommit()
-		if err != nil {
+		var c *object.Commit
+		if c, err = gr.LastCommit(); chk.E(err) {
 			d.Write500(w)
-			log.E.Ln(err)
 			return
 		}
-
 		desc := getDescription(path)
-
 		infos = append(infos, info{
 			Name: dir.Name(),
 			Desc: desc,
@@ -64,25 +58,21 @@ func (d *deps) Index(w http.ResponseWriter, r *http.Request) {
 			d:    c.Author.When,
 		})
 	}
-
 	sort.Slice(infos, func(i, j int) bool {
 		return infos[j].d.Before(infos[i].d)
 	})
-
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-
 	data := make(map[string]interface{})
 	data["meta"] = d.c.Meta
 	data["info"] = infos
-
-	if err := t.ExecuteTemplate(w, "index", data); err != nil {
-		log.E.Ln(err)
+	if err = t.ExecuteTemplate(w, "index", data); chk.E(err) {
 		return
 	}
 }
 
 func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
 		d.Write404(w)
@@ -90,24 +80,21 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	}
 	name = filepath.Clean(name)
 	path := filepath.Join(d.c.Repo.ScanPath, name)
-
-	gr, err := git.Open(path, "")
-	if err != nil {
+	var gr *git.GitRepo
+	if gr, err = git.Open(path, ""); chk.E(err) {
 		d.Write404(w)
 		return
 	}
-
-	commits, err := gr.Commits()
-	if err != nil {
+	var commits []*object.Commit
+	if commits, err = gr.Commits(); chk.E(err) {
 		d.Write500(w)
-		log.E.Ln(err)
 		return
 	}
-
 	var readmeContent template.HTML
 	for _, readme := range d.c.Repo.Readme {
 		ext := filepath.Ext(readme)
-		content, _ := gr.FileContent(readme)
+		var content string
+		content, err = gr.FileContent(readme)
 		if len(content) > 0 {
 			switch ext {
 			case ".md", ".mkd", ".markdown":
@@ -125,25 +112,19 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-
 	if readmeContent == "" {
 		log.E.Ln("no readme found for %s", name)
 	}
-
-	mainBranch, err := gr.FindMainBranch(d.c.Repo.MainBranch)
-	if err != nil {
+	var mainBranch string
+	if mainBranch, err = gr.FindMainBranch(d.c.Repo.MainBranch); chk.E(err) {
 		d.Write500(w)
-		log.E.Ln(err)
 		return
 	}
-
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
-
 	if len(commits) >= 3 {
 		commits = commits[:3]
 	}
-
 	data := make(map[string]any)
 	data["name"] = name
 	data["ref"] = mainBranch
@@ -153,56 +134,50 @@ func (d *deps) RepoIndex(w http.ResponseWriter, r *http.Request) {
 	data["servername"] = d.c.Server.Name
 	data["meta"] = d.c.Meta
 	data["gomod"] = isGoModule(gr)
-
-	if err := t.ExecuteTemplate(w, "repo", data); err != nil {
-		log.E.Ln(err)
+	if err = t.ExecuteTemplate(w, "repo", data); chk.E(err) {
 		return
 	}
-
 	return
 }
 
 func (d *deps) RepoTree(w http.ResponseWriter, r *http.Request) {
+	var err error
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
+		log.E.Ln(name, "is ignored")
 		d.Write404(w)
 		return
 	}
 	treePath := r.PathValue("rest")
 	ref := r.PathValue("ref")
-
 	name = filepath.Clean(name)
 	path := filepath.Join(d.c.Repo.ScanPath, name)
-	gr, err := git.Open(path, ref)
-	if err != nil {
+	var gr *git.GitRepo
+	if gr, err = git.Open(path, ref); chk.E(err) {
 		d.Write404(w)
 		return
 	}
-
-	files, err := gr.FileTree(treePath)
-	if err != nil {
+	var files []git.NiceTree
+	if files, err = gr.FileTree(treePath); chk.E(err) {
 		d.Write500(w)
-		log.E.Ln(err)
 		return
 	}
-
 	data := make(map[string]any)
 	data["name"] = name
 	data["ref"] = ref
 	data["parent"] = treePath
 	data["desc"] = getDescription(path)
 	data["dotdot"] = filepath.Dir(treePath)
-
 	d.listFiles(files, data, w)
 	return
 }
 
 func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
+	var err error
 	var raw bool
 	if rawParam, err := strconv.ParseBool(r.URL.Query().Get("raw")); err == nil {
 		raw = rawParam
 	}
-
 	name := r.PathValue("name")
 	if d.isIgnored(name) {
 		d.Write404(w)
@@ -210,7 +185,6 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 	}
 	treePath := r.PathValue("rest")
 	ref := r.PathValue("ref")
-
 	name = filepath.Clean(name)
 	path := filepath.Join(d.c.Repo.ScanPath, name)
 	gr, err := git.Open(path, ref)
@@ -218,14 +192,14 @@ func (d *deps) FileContent(w http.ResponseWriter, r *http.Request) {
 		d.Write404(w)
 		return
 	}
-
-	contents, err := gr.FileContent(treePath)
+	var contents string
+	if contents, err = gr.FileContent(treePath); chk.E(err) {
+	}
 	data := make(map[string]any)
 	data["name"] = name
 	data["ref"] = ref
 	data["desc"] = getDescription(path)
 	data["path"] = treePath
-
 	if raw {
 		d.showRaw(contents, w)
 	} else {
