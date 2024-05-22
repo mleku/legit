@@ -34,7 +34,6 @@ func (d *deps) isIgnored(name string) bool {
 			return true
 		}
 	}
-
 	return false
 }
 
@@ -44,35 +43,29 @@ type repoInfo struct {
 	Category string
 }
 
-func (d *deps) getAllRepos() ([]repoInfo, error) {
-	repos := []repoInfo{}
-	max := strings.Count(d.c.Repo.ScanPath, string(os.PathSeparator)) + 2
-
-	err := filepath.WalkDir(d.c.Repo.ScanPath, func(path string, de fs.DirEntry, err error) error {
-		if err != nil {
-			return err
+func (d *deps) getAllRepos() (repos []repoInfo, err error) {
+	maximum := strings.Count(d.c.Repo.ScanPath, string(os.PathSeparator)) + 2
+	err = filepath.WalkDir(d.c.Repo.ScanPath, func(path string, de fs.DirEntry, e error) (err error) {
+		if chk.E(e) {
+			return
 		}
-
 		if de.IsDir() {
 			// Check if we've exceeded our recursion depth
-			if strings.Count(path, string(os.PathSeparator)) > max {
+			if strings.Count(path, string(os.PathSeparator)) > maximum {
 				return fs.SkipDir
 			}
-
 			if d.isIgnored(path) {
+				log.I.Ln(path, "is ignored")
 				return fs.SkipDir
 			}
-
 			// A bare repo should always have at least a HEAD file, if it
 			// doesn't we can continue recursing
-			if _, err := os.Lstat(filepath.Join(path, "HEAD")); err == nil {
-				repo, err := git.Open(path, "")
-				if err != nil {
-					log.E.Ln(err)
-				} else {
+			if _, err = os.Lstat(filepath.Join(path, "HEAD")); !chk.E(err) {
+				var gr *git.GitRepo
+				if gr, err = git.Open(path, ""); !chk.E(err) {
 					relpath, _ := filepath.Rel(d.c.Repo.ScanPath, path)
 					repos = append(repos, repoInfo{
-						Git:      repo,
+						Git:      gr,
 						Path:     relpath,
 						Category: d.category(path),
 					})
@@ -82,12 +75,12 @@ func (d *deps) getAllRepos() ([]repoInfo, error) {
 				}
 			}
 		}
-		return nil
+		return
 	})
-
-	return repos, err
+	return
 }
 
 func (d *deps) category(path string) string {
-	return strings.TrimPrefix(filepath.Dir(strings.TrimPrefix(path, d.c.Repo.ScanPath)), string(os.PathSeparator))
+	return strings.TrimPrefix(filepath.Dir(strings.TrimPrefix(path,
+		d.c.Repo.ScanPath)), string(os.PathSeparator))
 }
