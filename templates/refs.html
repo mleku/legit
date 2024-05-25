@@ -22,7 +22,7 @@
       <div class="refs">
       {{ range .tags }}
       <div>
-<pre>{{ .Name }} commit: <a href="/{{ $name }}/commit/{{ .Hash }}">{{ .Hash }}</a> <a href="/{{ $name }}/tree/{{ .Name }}/">tree</a> {{ if .Message }}{{ .Message }}{{ end }}</pre>
+<pre>{{ .Name }} commit: <a href="/{{ $name }}/commit/{{ .Hash }}">{{ .Hash }}</a> <a href="/{{ $name }}/tree/{{ .Name }}/">tree</a> {{ if .Message }}Signed Tag: {{ .Message }}{{ end }}</pre>
         </div>
       {{ end }}
       </div>
