@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"os"
 
-	"mleku.net/legit/config"
-	"mleku.net/legit/routes"
-	"mleku.net/slog"
+	"github.com/mleku/legit/config"
+	"github.com/mleku/legit/routes"
+	"github.com/mleku/lol"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk = lol.New(os.Stderr)
 
 func main() {
-	slog.SetLogLevel(slog.Trace)
+	lol.SetLogLevel(lol.Trace)
 	log.I.Ln("logging")
 	var cfg string
 	flag.StringVar(&cfg, "config", "./config.yaml", "path to config file")

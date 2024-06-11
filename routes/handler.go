@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"mleku.net/legit/config"
+	"github.com/mleku/legit/config"
 )
 
 // Multiplex checks for git protocol-http(5) specific smells; if found, passes

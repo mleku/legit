@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mleku.net/legit/git"
-	"mleku.net/slog"
+	"github.com/mleku/legit/git"
+	"github.com/mleku/lol"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk = lol.New(os.Stderr)
 
 func isGoModule(gr *git.GitRepo) bool {
 	_, err := gr.FileContent("go.mod")
@@ -45,38 +45,39 @@ type repoInfo struct {
 
 func (d *deps) getAllRepos() (repos []repoInfo, err error) {
 	maximum := strings.Count(d.c.Repo.ScanPath, string(os.PathSeparator)) + 2
-	err = filepath.WalkDir(d.c.Repo.ScanPath, func(path string, de fs.DirEntry, e error) (err error) {
-		if chk.E(e) {
-			return
-		}
-		if de.IsDir() {
-			// Check if we've exceeded our recursion depth
-			if strings.Count(path, string(os.PathSeparator)) > maximum {
-				return fs.SkipDir
+	err = filepath.WalkDir(d.c.Repo.ScanPath,
+		func(path string, de fs.DirEntry, e error) (err error) {
+			if chk.E(e) {
+				return
 			}
-			if d.isIgnored(path) {
-				log.I.Ln(path, "is ignored")
-				return fs.SkipDir
-			}
-			// A bare repo should always have at least a HEAD file, if it
-			// doesn't we can continue recursing
-			if _, err = os.Lstat(filepath.Join(path, "HEAD")); !chk.E(err) {
-				var gr *git.GitRepo
-				if gr, err = git.Open(path, ""); !chk.E(err) {
-					relpath, _ := filepath.Rel(d.c.Repo.ScanPath, path)
-					repos = append(repos, repoInfo{
-						Git:      gr,
-						Path:     relpath,
-						Category: d.category(path),
-					})
-					// Since we found a Git repo, we don't want to recurse
-					// further
+			if de.IsDir() {
+				// Check if we've exceeded our recursion depth
+				if strings.Count(path, string(os.PathSeparator)) > maximum {
 					return fs.SkipDir
 				}
+				if d.isIgnored(path) {
+					log.I.Ln(path, "is ignored")
+					return fs.SkipDir
+				}
+				// A bare repo should always have at least a HEAD file, if it
+				// doesn't we can continue recursing
+				if _, err = os.Lstat(filepath.Join(path, "HEAD")); !chk.E(err) {
+					var gr *git.GitRepo
+					if gr, err = git.Open(path, ""); !chk.E(err) {
+						relpath, _ := filepath.Rel(d.c.Repo.ScanPath, path)
+						repos = append(repos, repoInfo{
+							Git:      gr,
+							Path:     relpath,
+							Category: d.category(path),
+						})
+						// Since we found a Git repo, we don't want to recurse
+						// further
+						return fs.SkipDir
+					}
+				}
 			}
-		}
-		return
-	})
+			return
+		})
 	return
 }
 

@@ -1,6 +1,6 @@
-module mleku.net/legit
+module github.com/mleku/legit
 
-go 1.22
+go 1.22.4
 
 require (
 	github.com/bluekeyes/go-gitdiff v0.7.3
@@ -8,10 +8,10 @@ require (
 	github.com/go-git/go-billy/v5 v5.5.0
 	github.com/go-git/go-git/v5 v5.12.0
 	github.com/microcosm-cc/bluemonday v1.0.26
+	github.com/mleku/lol v0.0.0-20240611174317-3f1a2cbd9327
 	github.com/russross/blackfriday/v2 v2.1.0
-	golang.org/x/sys v0.20.0
+	golang.org/x/sys v0.21.0
 	gopkg.in/yaml.v3 v3.0.1
-	mleku.net/slog v1.0.18
 )
 
 require (
@@ -34,10 +34,10 @@ require (
 	github.com/skeema/knownhosts v1.2.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
 	golang.org/x/net v0.25.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
-	mleku.net/atomic v1.11.10 // indirect
 )
 
 replace github.com/sergi/go-diff => github.com/sergi/go-diff v1.3.1

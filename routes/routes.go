@@ -14,9 +14,9 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/microcosm-cc/bluemonday"
+	"github.com/mleku/legit/config"
+	"github.com/mleku/legit/git"
 	"github.com/russross/blackfriday/v2"
-	"mleku.net/legit/config"
-	"mleku.net/legit/git"
 )
 
 type deps struct {

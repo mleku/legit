@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"mleku.net/legit/git"
+	"github.com/mleku/legit/git"
 )
 
 func (d *deps) Write404(w http.ResponseWriter) {
@@ -31,7 +31,8 @@ func (d *deps) Write500(w http.ResponseWriter) {
 	}
 }
 
-func (d *deps) listFiles(files []git.NiceTree, data map[string]any, w http.ResponseWriter) {
+func (d *deps) listFiles(files []git.NiceTree, data map[string]any,
+	w http.ResponseWriter) {
 	var err error
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))
@@ -68,7 +69,8 @@ func countLines(r io.Reader) (int, error) {
 	}
 }
 
-func (d *deps) showFile(content string, data map[string]any, w http.ResponseWriter) {
+func (d *deps) showFile(content string, data map[string]any,
+	w http.ResponseWriter) {
 	var err error
 	tpath := filepath.Join(d.c.Dirs.Templates, "*")
 	t := template.Must(template.ParseGlob(tpath))

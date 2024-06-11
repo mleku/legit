@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/mleku/lol"
 	"gopkg.in/yaml.v3"
-	"mleku.net/slog"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk = lol.New(os.Stderr)
 
 type Config struct {
 	Repo struct {

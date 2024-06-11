@@ -10,10 +10,10 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/plumbing/storer"
-	"mleku.net/slog"
+	"github.com/mleku/lol"
 )
 
-var log, chk = slog.New(os.Stderr)
+var log, chk = lol.New(os.Stderr)
 
 type GitRepo struct {
 	r *git.Repository
